@@ -1,926 +1,412 @@
-# Micro-Frontend with React, Vue, Angular + OAuth Login
+# Shell App - Micro-Frontend Container
 
-## 📁 Repository Structure
+The orchestrator application that loads and coordinates all micro-frontends (MFEs) in the MicroShop application.
 
-This system consists of **4 separate repositories**:
+---
+
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Directory Structure](#directory-structure)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Environment Management](#environment-management)
+- [Adding New MFEs](#adding-new-mfes)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## 🎯 Overview
+
+The Shell App is a **Vanilla JavaScript** application (no framework) that serves as the container for all micro-frontends. It handles:
+
+- ✅ **Authentication** - Google OAuth + Demo login
+- ✅ **MFE Orchestration** - Loading and mounting all MFEs
+- ✅ **Routing & Layout** - Application structure and navigation
+- ✅ **Environment Management** - DEV/SIT/UAT/PROD configurations
+- ✅ **Security** - CSP policies, origin validation, input validation
+- ✅ **Fault Isolation** - Graceful degradation when MFEs fail
+
+### Why Vanilla JavaScript?
+
+- **Framework-agnostic** - Can load any framework (React, Vue, Angular)
+- **Smaller bundle size** - No framework overhead
+- **No conflicts** - Won't clash with MFE frameworks
+- **Maximum flexibility** - Easy to modify and extend
+
+---
+
+## 🏗️ Architecture
+
+### Design Patterns
+
+The Shell App follows **SOLID principles** and implements several design patterns:
+
+1. **Strategy Pattern** - Different loading strategies for different MFE types
+2. **Registry Pattern** - Centralized MFE configuration
+3. **Observer Pattern** - Authentication state management
+4. **Facade Pattern** - Simple interface to complex loading logic
+
+### Core Components
 
 ```
-micro-frontend-ecosystem/
-├── shell-app/                    # Webpack Module Federation Container + Auth
-├── products-mfe-react/          # React + Webpack Module Federation
-├── cart-mfe-vue/                # Vue 3 + Webpack Module Federation
-└── user-mfe-angular/            # Angular + Module Federation
+┌─────────────────────────────────────────┐
+│           Shell App                     │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │      Authentication             │   │
+│  │  (authService, Login)           │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │      MFE Orchestration          │   │
+│  │  (MFELoader, Strategies)        │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │      UI Management              │   │
+│  │  (MFEUIManager, App)            │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │      Configuration              │   │
+│  │  (mfe-registry, env configs)    │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
 ```
 
-## 🏗️ Repository 1: Shell Application + Auth
+---
 
-**Repository Name:** `shell-app`  
-**Tech:** Webpack 5 Module Federation + Google OAuth
+## 📁 Directory Structure
 
-### Directory Structure
 ```
 shell-app/
-├── config/
-│   ├── dev.js
-│   ├── sit.js
-│   ├── uat.js
-│   └── prod.js
-├── public/
-│   ├── index.html (template)
-│   └── security/
-│       ├── csp-dev.js
-│       ├── csp-sit.js
-│       ├── csp-uat.js
-│       └── csp-prod.js
+├── config/                      # Environment configurations
+│   ├── dev.js                   # Development config
+│   ├── sit.js                   # SIT environment
+│   ├── uat.js                   # UAT environment
+│   └── prod.js                  # Production config
+│
+├── public/                      # Static assets
+│   ├── index.html               # Main HTML (with CSP)
+│   └── security/                # Security configs (optional)
+│
 ├── src/
-│   ├── auth/
-│   ├── App.js
-│   └── index.js
-├── .env.dev
-├── .env.sit
-├── .env.uat
-├── .env.prod
-├── webpack.config.js
-└── package.json
-# Shell Application
+│   ├── core/                    # Core orchestration logic
+│   │   └── MFELoader.js         # MFE loading orchestrator
+│   │
+│   ├── loaders/                 # Loading strategies
+│   │   └── AngularLoader.js     # Angular-specific loader
+│   │
+│   ├── ui/                      # UI management
+│   │   └── MFEUIManager.js      # UI feedback handler
+│   │
+│   ├── config/                  # Configuration
+│   │   └── mfe-registry.js      # 🎯 MFE registry (main config)
+│   │
+│   ├── auth/                    # Authentication
+│   │   ├── authService.js       # Auth logic (OAuth + Demo)
+│   │   └── Login.js             # Login UI component
+│   │
+│   ├── App.js                   # Main application class
+│   └── index.js                 # Entry point
+│
+├── .env.dev                     # Development environment vars
+├── .env.sit                     # SIT environment vars
+├── .env.uat                     # UAT environment vars
+├── .env.prod                    # Production environment vars
+│
+├── webpack.config.js            # Webpack + Module Federation
+├── package.json                 # Dependencies and scripts
+├── .gitignore                   # Git ignore rules
+└── README.md                    # This file
+```
 
-Container application with Google OAuth authentication.
+---
 
-## Setup
+## 🚀 Getting Started
+
+### Prerequisites
+
 ```bash
-npm install
-npm start           # Uses dev config
-# or
-npm run start:sit   # Test with SIT config locally
-npm run start:uat   # Test with UAT config locally
+node --version  # v18 or higher
+npm --version   # v9 or higher
+```
 
-Build for Deployment
+### Installation
+
+```bash
+# Install dependencies
+npm install
+```
+
+### Running the Application
+
+```bash
+# Development mode (default)
+npm start
+
+# Open browser automatically at http://localhost:3000
+```
+
+### Building for Production
+
+```bash
+# Build for specific environment
 npm run build:dev   # Development build
 npm run build:sit   # SIT build
 npm run build:uat   # UAT build
 npm run build:prod  # Production build
 ```
 
-## Google OAuth Setup (Optional)
-
-1. Go to https://console.cloud.google.com/
-2. Create a new project
-3. Enable Google Sign-In API
-4. Create OAuth 2.0 Client ID
-5. Add authorized origin: http://localhost:3000
-6. Copy Client ID to src/auth/authService.js (line 18)
-
-**Note:** App works with Demo login without OAuth!
-
-Runs on http://localhost:3000
-```
---------------
-# MicroShop - Micro-Frontend Architecture Guide
-
-## 📖 Table of Contents
-- [What is This Application?](#what-is-this-application)
-- [Architecture Overview](#architecture-overview)
-- [Repository Structure](#repository-structure)
-- [Installation & Setup](#installation--setup)
-- [Running the Application](#running-the-application)
-- [How It Works](#how-it-works)
-- [Adding New Micro-Frontends](#adding-new-micro-frontends)
-- [Cross-MFE Communication](#cross-mfe-communication)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-- [Best Practices](#best-practices)
-
 ---
 
-## 🎯 What is This Application?
+## ⚙️ Configuration
 
-**MicroShop** is a demonstration e-commerce application built using **Micro-Frontend Architecture**. It showcases how different teams can work independently on separate parts of an application using different technologies while creating a unified user experience.
+### MFE Registry
 
-### Key Features:
-- **Multi-Framework Integration**: React, Vue, and Angular working together
-- **Google OAuth Authentication**: Real login with Google or demo mode
-- **Fault Isolation**: If one micro-frontend fails, others continue working
-- **Independent Deployment**: Each team can deploy their MFE independently
-- **Cross-MFE Communication**: Components communicate via custom events
-- **Module Federation**: Uses Webpack 5's Module Federation for runtime integration
+The **single source of truth** for all MFE configurations.
 
-### Business Use Case:
-This architecture is ideal for:
-- Large organizations with multiple teams
-- Applications that need to scale development teams independently
-- Systems requiring different technologies for different features
-- Applications where parts need to be updated without full redeployment
-
----
-
-## 🏗️ Architecture Overview
-
-### The Four Repositories
-
-```
-micro-frontend-shop/
-├── shell-app/              # Container/Host Application
-├── products-mfe-react/     # Product Catalog (React)
-├── cart-mfe-vue/           # Shopping Cart (Vue)
-└── user-mfe-angular/       # User Profile (Angular)
-```
-
-### Technology Stack
-
-| MFE | Framework | Port | Team | Purpose |
-|-----|-----------|------|------|---------|
-| **Shell App** | Vanilla JS + Webpack 5 | 3000 | Platform Team | Container, Authentication, Orchestration |
-| **Products MFE** | React 18 | 3001 | Catalog Team | Product listing and management |
-| **Cart MFE** | Vue 3 | 3002 | Commerce Team | Shopping cart functionality |
-| **User MFE** | Angular 17 | 3003 | Identity Team | User profile and authentication state |
-
-### Communication Flow
-
-```
-┌─────────────────────────────────────────┐
-│          Shell App (Port 3000)          │
-│  - Authentication (Google OAuth)        │
-│  - Layout & Navigation                  │
-│  - MFE Orchestration                    │
-└─────────────────────────────────────────┘
-         │              │              │
-         ▼              ▼              ▼
-    ┌────────┐    ┌─────────┐    ┌──────────┐
-    │Products│    │  Cart   │    │   User   │
-    │ React  │    │   Vue   │    │ Angular  │
-    │ :3001  │    │  :3002  │    │  :3003   │
-    └────────┘    └─────────┘    └──────────┘
-         │              │              │
-         └──────────────┴──────────────┘
-                     │
-              Custom Events
-         (addToCart, cartUpdated)
-```
-
----
-
-## 📁 Repository Structure
-
-### Shell App (`shell-app/`)
-
-```
-shell-app/
-├── public/
-│   └── index.html              # Main HTML entry point
-├── src/
-│   ├── auth/
-│   │   ├── authService.js      # OAuth & Demo authentication
-│   │   └── Login.js            # Login screen component
-│   ├── App.js                  # Main application logic & MFE loading
-│   └── index.js                # Entry point
-├── webpack.config.js           # Webpack & Module Federation config
-├── package.json
-└── README.md
-
---new format--
-shell-app/
-├── config/
-│   ├── dev.js
-│   ├── sit.js
-│   ├── uat.js
-│   └── prod.js
-├── public/
-│   ├── index.html (template)
-│   └── security/
-│       ├── csp-dev.js
-│       ├── csp-sit.js
-│       ├── csp-uat.js
-│       └── csp-prod.js
-├── src/
-│   ├── auth/
-│   ├── App.js
-│   └── index.js
-├── .env.dev
-├── .env.sit
-├── .env.uat
-├── .env.prod
-├── webpack.config.js
-└── package.json
-```
-
-**Key Files:**
-- `App.js`: Loads and orchestrates all MFEs, handles authentication state
-- `authService.js`: Manages Google OAuth and demo login
-- `webpack.config.js`: Configures Module Federation remotes
-
----
-
-### Products MFE (`products-mfe-react/`)
-
-```
-products-mfe-react/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/
-│   │   └── ProductCard.jsx     # Individual product display
-│   ├── ProductsApp.jsx         # Main products component
-│   ├── bootstrap.jsx           # Mount/unmount logic
-│   └── index.js                # Entry point
-├── webpack.config.js           # Module Federation config
-├── package.json
-└── README.md
-```
-
-**Key Responsibilities:**
-- Display product catalog
-- Handle "Add to Cart" button clicks
-- Emit `addToCart` custom events
-- Can run standalone on port 3001
-
----
-
-### Cart MFE (`cart-mfe-vue/`)
-
-```
-cart-mfe-vue/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/
-│   │   └── CartItem.vue        # Individual cart item
-│   ├── CartApp.vue             # Main cart component
-│   ├── bootstrap.js            # Mount logic
-│   └── main.js                 # Entry point
-├── webpack.config.js           # Module Federation config
-├── package.json
-└── README.md
-```
-
-**Key Responsibilities:**
-- Listen for `addToCart` events
-- Manage cart state (add/remove items)
-- Calculate totals
-- Emit `cartUpdated` events
-- Can run standalone on port 3002
-
----
-
-### User Profile MFE (`user-mfe-angular/`)
-
-```
-user-mfe-angular/
-├── src/
-│   ├── app/
-│   │   ├── user-profile/
-│   │   │   ├── user-profile.component.ts
-│   │   │   ├── user-profile.component.html
-│   │   │   └── user-profile.component.css
-│   │   ├── app.component.ts
-│   │   └── app.module.ts
-│   ├── main.ts                 # Entry point & mount function
-│   └── index.html
-├── angular.json                # Angular CLI config
-├── tsconfig.json               # TypeScript config
-├── package.json
-└── README.md
-```
-
-**Key Responsibilities:**
-- Display logged-in user information
-- Listen for `cartUpdated` events
-- Show cart item count
-- Read user from sessionStorage
-- Can run standalone on port 3003
-
----
-
-## 🚀 Installation & Setup
-
-### Prerequisites
-
-```bash
-# Required
-node --version  # v18 or higher
-npm --version   # v9 or higher
-
-# Optional (for Google OAuth)
-# Google Cloud Console account
-```
-
-### Initial Setup
-
-**Step 1: Clone or create the repositories**
-
-```bash
-mkdir micro-frontend-shop
-cd micro-frontend-shop
-
-# Create all 4 directories
-mkdir shell-app products-mfe-react cart-mfe-vue user-mfe-angular
-```
-
-**Step 2: Copy code into each repository**
-
-Copy the respective files from the documentation into each directory.
-
-**Step 3: Install dependencies**
-
-```bash
-# Install for Shell App
-cd shell-app
-npm install
-
-# Install for Products MFE
-cd ../products-mfe-react
-npm install
-
-# Install for Cart MFE
-cd ../cart-mfe-vue
-npm install
-
-# Install for User MFE
-cd ../user-mfe-angular
-npm install
-```
-
-### Google OAuth Setup (Optional)
-
-The app works with **Demo Login** out of the box. For production Google OAuth:
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project: "MicroShop"
-3. Enable **Google Sign-In API**
-4. Create **OAuth 2.0 Client ID**:
-   - Application type: Web application
-   - Authorized JavaScript origins: `http://localhost:3000`
-   - Authorized redirect URIs: `http://localhost:3000`
-5. Copy the **Client ID**
-6. Update `shell-app/src/auth/authService.js`:
-   ```javascript
-   const GOOGLE_CLIENT_ID = 'YOUR_ACTUAL_CLIENT_ID.apps.googleusercontent.com';
-   ```
-
----
-
-## 🏃 Running the Application
-
-### Development Mode
-
-You need **4 terminal windows** running simultaneously:
-
-```bash
-# Terminal 1 - Shell App (Port 3000)
-cd shell-app
-npm start
-
-# Terminal 2 - Products MFE (Port 3001)
-cd products-mfe-react
-npm start
-
-# Terminal 3 - Cart MFE (Port 3002)
-cd cart-mfe-vue
-npm start
-
-# Terminal 4 - User MFE (Port 3003)
-cd user-mfe-angular
-npm start
-```
-
-### Access Points
-
-| URL | Description |
-|-----|-------------|
-| http://localhost:3000 | **Main application** (Shell with all MFEs) |
-| http://localhost:3001 | Products MFE (standalone) |
-| http://localhost:3002 | Cart MFE (standalone) |
-| http://localhost:3003 | User Profile MFE (standalone) |
-
-### Testing the Application
-
-1. **Open** http://localhost:3000
-2. **Click** "Try Demo Account" (or sign in with Google)
-3. **Add products** to cart
-4. **Observe** cart count updates in User Profile (Angular)
-5. **Test fault isolation**: Stop one MFE (Ctrl+C) and refresh - others still work!
-
-### Stopping All Servers
-
-```bash
-# In each terminal window
-Ctrl + C
-
-# Or kill all at once (Mac/Linux)
-lsof -ti:3000,3001,3002,3003 | xargs kill -9
-```
-
----
-
-## ⚙️ How It Works
-
-### 1. Application Bootstrap Flow
-
-```
-User visits localhost:3000
-    ↓
-Shell App loads
-    ↓
-Authentication check
-    ↓
-If not authenticated → Show Login screen
-If authenticated → Load all MFEs
-    ↓
-Shell dynamically imports MFEs via Module Federation
-    ↓
-Each MFE mounts into its designated container
-    ↓
-Application ready
-```
-
-### 2. Module Federation (Webpack 5)
-
-**Shell App webpack.config.js:**
-```javascript
-new ModuleFederationPlugin({
-  name: 'shell',
-  remotes: {
-    productsMFE: 'productsMFE@http://localhost:3001/remoteEntry.js',
-    cartMFE: 'cartMFE@http://localhost:3002/remoteEntry.js',
-  },
-})
-```
-
-**Products MFE webpack.config.js:**
-```javascript
-new ModuleFederationPlugin({
-  name: 'productsMFE',
-  filename: 'remoteEntry.js',
-  exposes: {
-    './ProductsApp': './src/bootstrap',
-  },
-})
-```
-
-This allows the shell to dynamically load MFEs at **runtime**, not build time.
-
-### 3. Cross-MFE Communication
-
-**Products MFE (React) - Emitting Event:**
-```javascript
-// When user clicks "Add to Cart"
-window.dispatchEvent(
-  new CustomEvent('addToCart', { 
-    detail: product 
-  })
-);
-```
-
-**Cart MFE (Vue) - Listening for Event:**
-```javascript
-// Listen for products being added
-window.addEventListener('addToCart', (event) => {
-  cartItems.value.push(event.detail);
-  
-  // Notify others about cart update
-  window.dispatchEvent(
-    new CustomEvent('cartUpdated', {
-      detail: { itemCount: cartItems.value.length }
-    })
-  );
-});
-```
-
-**User MFE (Angular) - Listening for Updates:**
-```typescript
-// Listen for cart changes
-ngOnInit() {
-  this.cartListener = (event: any) => {
-    this.cartItemCount = event.detail.itemCount;
-  };
-  window.addEventListener('cartUpdated', this.cartListener);
-}
-```
-
-### 4. Authentication Flow
-
-```
-1. User visits app → authService checks sessionStorage
-2. If no session → Show login screen
-3. User clicks "Demo Login" or "Google Sign-In"
-4. authService stores user in sessionStorage
-5. authService notifies all subscribers
-6. App.js receives auth state change
-7. App re-renders with authenticated view
-8. All MFEs load
-9. User MFE reads user from sessionStorage
-```
-
-### 5. Fault Isolation
+**File: `src/config/mfe-registry.js`**
 
 ```javascript
-// In shell-app/src/App.js
-async loadMicroFrontends() {
-  for (const mfe of mfes) {
-    try {
-      const module = await mfe.import();
-      mfe.mount(module);
-      loadedCount++;
-    } catch (error) {
-      failedCount++;
-      // Show error UI but continue loading others
-      this.showMFEStatus(mfe.containerId, 'error', ...);
-    }
-  }
-}
-```
-
-If one MFE fails to load, the shell catches the error and shows a friendly message while other MFEs continue working.
-
----
-
-## 🆕 Adding New Micro-Frontends
-
-### Example: Adding a "Reviews MFE" (React)
-
-**Step 1: Create the new MFE repository**
-
-```bash
-cd micro-frontend-shop
-mkdir reviews-mfe-react
-cd reviews-mfe-react
-```
-
-**Step 2: Create package.json**
-
-```json
-{
-  "name": "reviews-mfe-react",
-  "version": "1.0.0",
-  "scripts": {
-    "start": "npx webpack serve",
-    "build": "npx webpack --mode production"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.23.0",
-    "@babel/preset-react": "^7.22.0",
-    "babel-loader": "^9.1.3",
-    "html-webpack-plugin": "^5.5.3",
-    "webpack": "^5.89.0",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
-  }
-}
-```
-
-**Step 3: Create webpack.config.js**
-
-```javascript
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
-
-module.exports = {
-  entry: './src/index.js',
-  mode: 'development',
-  devServer: {
-    port: 3004, // New port
-    hot: true,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-    },
-  },
-  output: {
-    publicPath: 'http://localhost:3004/',
-  },
-  resolve: {
-    extensions: ['.js', '.jsx'],
-  },
-  module: {
-    rules: [
-      {
-        test: /\.jsx?$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-react'],
-          },
+export const MFE_REGISTRY = [
+    {
+        name: 'Products',
+        tech: 'React',
+        containerId: 'products-container',
+        mountId: 'products-mfe',
+        port: 3001,
+        
+        loader: {
+            load: () => import('productsMFE/ProductsApp'),
+            mount: (module) => module.mount('products-mfe')
         },
-      },
-    ],
+        
+        onSuccess: () => MFEUIManager.showSuccess('products-container'),
+        onError: () => MFEUIManager.showError('products-container', 'Products', 'React', 3001)
+    },
+    // ... more MFEs
+];
+```
+
+### Webpack Configuration
+
+**File: `webpack.config.js`**
+
+Key sections:
+
+```javascript
+// Module Federation - Remote MFEs
+remotes: {
+  productsMFE: 'productsMFE@http://localhost:3001/remoteEntry.js',
+  cartMFE: 'cartMFE@http://localhost:3002/remoteEntry.js',
+}
+
+// Environment injection
+new webpack.DefinePlugin({
+  'process.env.BUILD_ENV': JSON.stringify(BUILD_ENV),
+  'process.env.SHELL_URL': JSON.stringify(config.shellUrl),
+  // ... more env vars
+})
+
+// HTML template with CSP injection
+new HtmlWebpackPlugin({
+  template: './public/index.html',
+  templateParameters: {
+    CSP: generateCSPString(config.security.csp),
   },
-  plugins: [
-    new ModuleFederationPlugin({
-      name: 'reviewsMFE',
-      filename: 'remoteEntry.js',
-      exposes: {
-        './ReviewsApp': './src/bootstrap',
-      },
-      shared: {
-        react: { singleton: true, eager: true },
-        'react-dom': { singleton: true, eager: true },
-      },
-    }),
-    new HtmlWebpackPlugin({
-      template: './public/index.html',
-    }),
-  ],
+})
+```
+
+---
+
+## 🌍 Environment Management
+
+### Available Environments
+
+| Environment | Command | Port | Badge Color | CSP |
+|-------------|---------|------|-------------|-----|
+| **Development** | `npm start` | 3000 | 🟢 Green | Relaxed |
+| **SIT** | `npm run start:sit` | 3000 | 🔵 Blue | Moderate |
+| **UAT** | `npm run start:uat` | 3000 | 🟠 Orange | Moderate |
+| **Production** | `npm run build:prod` | - | None | Strict |
+
+### Environment Configuration
+
+Each environment has its own config file:
+
+**Example: `config/prod.js`**
+
+```javascript
+module.exports = {
+  environment: 'production',
+  shellUrl: 'https://app.microshop.com',
+  mfeUrls: {
+    products: 'https://products.microshop.com',
+    cart: 'https://cart.microshop.com',
+    user: 'https://user.microshop.com',
+  },
+  googleClientId: 'YOUR_PROD_CLIENT_ID',
+  security: {
+    csp: {
+      'default-src': ["'self'"],
+      'script-src': ["'self'", "https://products.microshop.com"],
+      // ... strict production CSP
+    },
+    corsOrigins: ['https://app.microshop.com'],
+    enableSRI: true,
+    enableHSTS: true,
+  },
+  features: {
+    debugMode: false,
+    hotReload: false,
+  }
 };
 ```
 
-**Step 4: Create the component**
+### Environment Badge
+
+The shell automatically shows an environment indicator badge:
+
+- **Visible in**: DEV, SIT, UAT
+- **Hidden in**: Production
+- **Location**: Top-right corner
+- **Implementation**: JavaScript-based (no CSS template syntax)
+
+**Code location**: `src/App.js` → `addEnvironmentBadge()` method
+
+---
+
+## 🆕 Adding New MFEs
+
+### Quick Guide (4 Steps)
+
+**1. Add MFE to Registry**
+
+Edit `src/config/mfe-registry.js`:
 
 ```javascript
-// src/ReviewsApp.jsx
-import React from 'react';
-
-export default function ReviewsApp() {
-  return (
-    <div>
-      <h2>Product Reviews</h2>
-      <p>Reviews will appear here...</p>
-    </div>
-  );
+{
+    name: 'Reviews',
+    tech: 'React',
+    containerId: 'reviews-container',
+    mountId: 'reviews-mfe',
+    port: 3004,
+    
+    loader: {
+        load: () => import('reviewsMFE/ReviewsApp'),
+        mount: (module) => module.mount('reviews-mfe')
+    },
+    
+    onSuccess: () => MFEUIManager.showSuccess('reviews-container'),
+    onError: () => MFEUIManager.showError('reviews-container', 'Reviews', 'React', 3004)
 }
-
-// src/bootstrap.jsx
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import ReviewsApp from './ReviewsApp';
-
-export function mount(elementId) {
-  const container = document.getElementById(elementId);
-  const root = createRoot(container);
-  root.render(<ReviewsApp />);
-}
-
-// src/index.js
-import('./bootstrap');
 ```
 
-**Step 5: Update Shell App**
+**2. Add Remote to Webpack**
 
-In `shell-app/webpack.config.js`, add the new remote:
+Edit `webpack.config.js`:
 
 ```javascript
 remotes: {
   productsMFE: 'productsMFE@http://localhost:3001/remoteEntry.js',
   cartMFE: 'cartMFE@http://localhost:3002/remoteEntry.js',
   reviewsMFE: 'reviewsMFE@http://localhost:3004/remoteEntry.js', // NEW
-},
+}
 ```
 
-In `shell-app/src/App.js`, add to the MFEs array:
+**3. Add Container to Layout**
 
-```javascript
-const mfes = [
-  // ... existing MFEs
-  {
-    name: 'Reviews',
-    tech: 'React',
-    import: () => import('reviewsMFE/ReviewsApp'),
-    mount: (module) => module.mount('reviews-mfe'),
-    containerId: 'reviews-container',
-    port: 3004
-  }
-];
-```
-
-Add the container in the render method:
+Edit `src/App.js` → `render()` method:
 
 ```javascript
 <div id="reviews-container" style="...">
-  <div style="...">
-    📦 reviews-mfe-react @ localhost:3004 | Tech: React
-  </div>
-  <div style="padding: 20px;">
-    <div id="reviews-mfe"></div>
-  </div>
+    <div style="...">📦 reviews-mfe-react @ localhost:3004</div>
+    <div style="padding: 20px;">
+        <div id="reviews-mfe"></div>
+    </div>
 </div>
 ```
 
-**Step 6: Run the new MFE**
+**4. Start the New MFE**
 
 ```bash
 cd reviews-mfe-react
-npm install
 npm start
 ```
 
-Now refresh localhost:3000 and you'll see the Reviews MFE!
+That's it! The shell will automatically load your new MFE! 🎉
 
 ---
 
-## 📡 Cross-MFE Communication
+## 🔒 Security
 
-### Event-Based Communication Pattern
+### Content Security Policy (CSP)
 
-**Best Practices:**
-1. Use descriptive event names (e.g., `product.selected`, `cart.updated`)
-2. Always include relevant data in `event.detail`
-3. Clean up event listeners in component unmount/destroy
-4. Document all events in a shared events catalog
+The shell implements environment-specific CSP policies:
 
-### Example: Product Selection Event
-
-**1. Define the event contract:**
-
-```javascript
-// docs/events.md
-/**
- * Event: product.selected
- * Emitted by: Products MFE
- * Payload: { id, name, price, image }
- * Listeners: Reviews MFE, Cart MFE
- */
+**Development CSP (Relaxed):**
+```
+default-src 'self' http://localhost:* ws://localhost:*;
+script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*;
+style-src 'self' 'unsafe-inline';
 ```
 
-**2. Emit from Products MFE:**
+**Production CSP (Strict):**
+```
+default-src 'self';
+script-src 'self' https://products.microshop.com https://cart.microshop.com;
+style-src 'self';
+connect-src 'self' https://api.microshop.com;
+```
+
+### Origin Validation
+
+Angular MFE loader validates script sources:
 
 ```javascript
-function handleProductClick(product) {
-  window.dispatchEvent(
-    new CustomEvent('product.selected', {
-      detail: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image
-      }
-    })
-  );
+// In AngularLoader.js
+const ALLOWED_ORIGINS = [
+  'http://localhost:3003',           // Development
+  'https://user-sit.microshop.com',  // SIT
+  'https://user.microshop.com'       // Production
+];
+
+if (!ALLOWED_ORIGINS.includes(origin)) {
+  throw new Error('Untrusted origin');
 }
 ```
 
-**3. Listen in Reviews MFE:**
+### Input Validation
+
+All cross-MFE event data is validated:
 
 ```javascript
-useEffect(() => {
-  const handler = (event) => {
-    setSelectedProduct(event.detail);
-    loadReviews(event.detail.id);
-  };
-  
-  window.addEventListener('product.selected', handler);
-  
-  return () => {
-    window.removeEventListener('product.selected', handler);
-  };
-}, []);
-```
+// Example in Cart MFE
+const isValid = 
+  product &&
+  typeof product.id === 'number' &&
+  typeof product.price === 'number' &&
+  product.price > 0;
 
-### Alternative: Shared State Management
-
-For more complex state, consider:
-- **Redux** with shared store
-- **RxJS** BehaviorSubjects
-- **Zustand** or other lightweight state managers
-
-Example with a shared state service:
-
-```javascript
-// shared-state-service (separate npm package)
-class StateService {
-  constructor() {
-    this.state = { cart: [], user: null };
-    this.listeners = [];
-  }
-  
-  subscribe(listener) {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
-    };
-  }
-  
-  setState(updates) {
-    this.state = { ...this.state, ...updates };
-    this.listeners.forEach(listener => listener(this.state));
-  }
-  
-  getState() {
-    return this.state;
-  }
-}
-
-export default new StateService();
-```
-
----
-
-## 🚢 Deployment
-
-### Production Build
-
-**Step 1: Build all MFEs**
-
-```bash
-# Build Shell
-cd shell-app
-npm run build
-
-# Build Products
-cd ../products-mfe-react
-npm run build
-
-# Build Cart
-cd ../cart-mfe-vue
-npm run build
-
-# Build User
-cd ../user-mfe-angular
-npm run build
-```
-
-**Step 2: Deploy to separate hosts**
-
-Each MFE should be deployed to its own domain or subdomain:
-
-```
-shell-app         → https://app.microshop.com
-products-mfe      → https://products.microshop.com
-cart-mfe          → https://cart.microshop.com
-user-mfe          → https://user.microshop.com
-```
-
-**Step 3: Update webpack configs with production URLs**
-
-```javascript
-// shell-app/webpack.config.js
-remotes: {
-  productsMFE: 'productsMFE@https://products.microshop.com/remoteEntry.js',
-  cartMFE: 'cartMFE@https://cart.microshop.com/remoteEntry.js',
+if (!isValid) {
+  console.error('Invalid product data');
+  return;
 }
 ```
 
-### Deployment Platforms
+### Security Best Practices
 
-| Platform | Best For | Notes |
-|----------|----------|-------|
-| **AWS S3 + CloudFront** | Static hosting | Cost-effective, CDN included |
-| **Netlify** | Simple deployments | Great DX, automatic HTTPS |
-| **Vercel** | Next.js/React apps | Excellent for React MFEs |
-| **Azure Static Web Apps** | Enterprise | Good for Angular MFEs |
-| **Google Cloud Storage** | GCP ecosystem | Integrates with Google OAuth |
-
-### CI/CD Pipeline Example (GitHub Actions)
-
-```yaml
-# .github/workflows/deploy-products-mfe.yml
-name: Deploy Products MFE
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'products-mfe-react/**'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Install dependencies
-        working-directory: ./products-mfe-react
-        run: npm ci
-      
-      - name: Build
-        working-directory: ./products-mfe-react
-        run: npm run build
-      
-      - name: Deploy to S3
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --delete
-        env:
-          AWS_S3_BUCKET: products-microshop
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          SOURCE_DIR: 'products-mfe-react/dist'
-```
-
-### Environment Configuration
-
-**Use environment variables for different stages:**
-
-```javascript
-// webpack.config.js
-const isProd = process.env.NODE_ENV === 'production';
-const baseUrl = isProd 
-  ? 'https://products.microshop.com'
-  : 'http://localhost:3001';
-
-module.exports = {
-  output: {
-    publicPath: baseUrl,
-  },
-  // ...
-};
-```
+1. ✅ **CSP Headers** - Environment-specific policies
+2. ✅ **Origin Validation** - Check script sources before loading
+3. ✅ **Input Validation** - Validate all event data
+4. ✅ **CORS Configuration** - Restrict allowed origins
+5. ✅ **SessionStorage Only** - No sensitive data in localStorage
+6. ✅ **HTTPS Enforced** - Production uses HTTPS only
+7. ✅ **SRI Hashes** - Subresource Integrity in production
 
 ---
 
@@ -928,475 +414,239 @@ module.exports = {
 
 ### Common Issues
 
-#### 1. "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+#### 1. "Cannot find module 'productsMFE/ProductsApp'"
 
-**Problem:** One or more MFEs aren't running.
+**Cause**: MFE not running or webpack config incorrect
 
-**Solution:**
+**Solution**:
 ```bash
-# Check which ports are in use
-lsof -i :3000
+# Check if MFE is running
 lsof -i :3001
-lsof -i :3002
-lsof -i :3003
 
-# Start the missing MFE
-cd <mfe-directory>
+# Verify webpack remotes match registry
+# Start the MFE
+cd products-mfe-react
 npm start
 ```
 
 ---
 
-#### 2. "Module not found: Error: Can't resolve 'productsMFE/ProductsApp'"
+#### 2. "Failed to load User Profile MFE"
 
-**Problem:** Shell app can't find the remote MFE.
+**Cause**: Angular scripts not loading
 
-**Solution:**
-1. Verify the MFE is running on the correct port
-2. Check `webpack.config.js` remotes configuration
-3. Clear browser cache and restart
-
-```bash
-# Restart all servers
-# Stop all (Ctrl+C in each terminal)
-# Then start again
-```
+**Solution**:
+- Check if Angular MFE is running on port 3003
+- Verify `ANGULAR_ALLOWED_ORIGINS` in `mfe-registry.js`
+- Check browser console for specific errors
 
 ---
 
-#### 3. "TypeError: Cannot read property 'mount' of undefined"
+#### 3. CSP Blocking Resources
 
-**Problem:** MFE doesn't expose the mount function correctly.
+**Cause**: Content Security Policy too strict
 
-**Solution:**
-Check `bootstrap.jsx/js` exports:
+**Solution**:
 ```javascript
-// Must export 'mount' function
-export function mount(elementId) {
-  // mounting logic
-}
-```
-
----
-
-#### 4. CORS Errors
-
-**Problem:** Cross-origin resource sharing blocked.
-
-**Solution:**
-Add CORS headers to webpack dev server:
-
-```javascript
-// webpack.config.js
-devServer: {
-  headers: {
-    'Access-Control-Allow-Origin': '*',
-  },
-}
-```
-
----
-
-#### 5. Angular "app-root" not found
-
-**Problem:** Angular can't find its bootstrap element.
-
-**Solution:**
-Ensure `main.ts` creates the element:
-
-```typescript
-if (targetElement && containerId) {
-  const appRoot = document.createElement('app-root');
-  targetElement.appendChild(appRoot);
-}
-```
-
----
-
-#### 6. Styles Not Loading
-
-**Problem:** CSS not applied to components.
-
-**Solution:**
-- **React**: Use CSS modules or styled-components
-- **Vue**: Scoped styles should work automatically
-- **Angular**: Check `styleUrls` in component decorator
-
----
-
-#### 7. Blank Screen After Login
-
-**Problem:** MFEs load but don't render.
-
-**Solution:**
-1. Open browser DevTools console
-2. Check for JavaScript errors
-3. Verify mount functions are being called
-4. Check if containers exist in DOM
-
-```javascript
-// Add debugging
-console.log('Container:', document.getElementById('products-mfe'));
-```
-
----
-
-### Debugging Tips
-
-**1. Enable Verbose Logging:**
-
-```javascript
-// In shell-app/src/App.js
-console.log('🔍 Debug: Loading MFE:', mfe.name);
-console.log('🔍 Debug: Container exists:', !!document.getElementById(mfe.containerId));
-```
-
-**2. Test MFEs in Isolation:**
-
-Visit each MFE directly:
-- http://localhost:3001 (Products)
-- http://localhost:3002 (Cart)
-- http://localhost:3003 (User)
-
-If they don't work standalone, fix them first before integrating.
-
-**3. Check Network Tab:**
-
-In DevTools → Network:
-- Look for `remoteEntry.js` files
-- Check if they return 200 status
-- Verify correct URLs
-
-**4. Module Federation Debug:**
-
-```javascript
-// In webpack.config.js
-optimization: {
-  runtimeChunk: false, // Set to true for debugging
-}
-```
-
----
-
-## 📚 Best Practices
-
-### 1. Repository Organization
-
-**Monorepo vs. Polyrepo:**
-
-| Approach | Pros | Cons |
-|----------|------|------|
-| **Monorepo** | Easier coordination, shared tooling | Potential merge conflicts, large repo |
-| **Polyrepo** | True independence, clear ownership | More complex coordination |
-
-**Recommendation:** Use **polyrepo** for true micro-frontend independence.
-
----
-
-### 2. Versioning Strategy
-
-**Semantic Versioning for MFEs:**
-
-```json
-// package.json
-{
-  "version": "1.2.3"
-  //         │ │ │
-  //         │ │ └─── Patch: Bug fixes
-  //         │ └───── Minor: New features (backward compatible)
-  //         └─────── Major: Breaking changes
-}
-```
-
-**Version Pinning in Shell:**
-
-```javascript
-// webpack.config.js - Pin to specific versions
-remotes: {
-  productsMFE: 'productsMFE@https://cdn.app.com/v1.2.3/remoteEntry.js',
-}
-```
-
----
-
-### 3. Error Boundaries
-
-**React Error Boundary:**
-
-```javascript
-class MFEErrorBoundary extends React.Component {
-  state = { hasError: false };
-  
-  static getDerivedStateFromError(error) {
-    return { hasError: true };
-  }
-  
-  componentDidCatch(error, info) {
-    console.error('MFE Error:', error, info);
-  }
-  
-  render() {
-    if (this.state.hasError) {
-      return <div>This feature is temporarily unavailable.</div>;
-    }
-    return this.props.children;
+// Update config/dev.js to allow source
+security: {
+  csp: {
+    'script-src': ["'self'", "https://accounts.google.com"],
   }
 }
 ```
 
 ---
 
-### 4. Performance Optimization
+#### 4. Environment Badge Not Showing
 
-**Code Splitting:**
+**Cause**: Running in production mode or badge not added
 
-```javascript
-// Load MFEs on demand, not upfront
-const loadProducts = () => import('productsMFE/ProductsApp');
+**Solution**:
+- Badge only shows in DEV/SIT/UAT (not production)
+- Check `addEnvironmentBadge()` method in `App.js`
+- Verify `process.env.BUILD_ENV` is set
 
-// Only load when needed
-if (userNavigatedToProducts) {
-  loadProducts().then(module => module.mount('container'));
-}
-```
+---
 
-**Preloading:**
+### Debug Mode
 
-```html
-<!-- In shell index.html -->
-<link rel="preload" href="http://localhost:3001/remoteEntry.js" as="script">
-```
-
-**Caching:**
+Enable verbose logging:
 
 ```javascript
-// webpack.config.js
-output: {
-  filename: '[name].[contenthash].js', // Cache busting
-}
+// In App.js constructor
+console.log('🔍 Shell App Debug Info:');
+console.log('- Environment:', process.env.BUILD_ENV);
+console.log('- MFE Count:', MFE_REGISTRY.length);
+console.log('- MFEs:', MFE_REGISTRY.map(m => m.name));
 ```
 
 ---
 
-### 5. Testing Strategy
+## 📊 Console Output
 
-**Unit Tests:** Test components in isolation
+### Successful Load
 
-```javascript
-// products-mfe-react/src/ProductCard.test.jsx
-import { render, screen } from '@testing-library/react';
-import ProductCard from './ProductCard';
+```
+🌍 Running in DEV environment
+============================================================
+🚀 Starting MFE orchestration...
+============================================================
 
-test('displays product name', () => {
-  render(<ProductCard product={{ name: 'iPhone' }} />);
-  expect(screen.getByText('iPhone')).toBeInTheDocument();
-});
+🔄 Loading User Profile MFE (Angular)...
+✅ Security check passed: http://localhost:3003
+✅ User Profile MFE loaded successfully
+
+🔄 Loading Products MFE (React)...
+✅ Products MFE loaded successfully
+
+🔄 Loading Cart MFE (Vue)...
+✅ Cart MFE loaded successfully
+
+============================================================
+📊 MFE Load Summary
+============================================================
+Total:   3
+Loaded:  3 ✅
+Failed:  0 ❌
+============================================================
 ```
 
-**Integration Tests:** Test cross-MFE communication
+### With Failures (Fault Isolation)
 
-```javascript
-test('adding to cart updates user profile', async () => {
-  // Mount all MFEs
-  await mountProducts();
-  await mountCart();
-  await mountUser();
-  
-  // Trigger add to cart
-  fireEvent.click(screen.getByText('Add to Cart'));
-  
-  // Verify cart updated
-  await waitFor(() => {
-    expect(screen.getByText('1 items')).toBeInTheDocument();
-  });
-});
 ```
+🚀 Starting MFE orchestration...
 
-**E2E Tests:** Test full user flows
+✅ User Profile MFE loaded successfully
+❌ Failed to load Products MFE: Cannot find module
+✅ Cart MFE loaded successfully
 
-```javascript
-// Using Cypress or Playwright
-describe('Shopping Flow', () => {
-  it('should add product and checkout', () => {
-    cy.visit('http://localhost:3000');
-    cy.get('[data-testid="demo-login"]').click();
-    cy.get('[data-testid="product-1"] button').click();
-    cy.get('[data-testid="cart-count"]').should('contain', '1');
-  });
-});
-```
+============================================================
+📊 MFE Load Summary
+============================================================
+Total:   3
+Loaded:  2 ✅
+Failed:  1 ❌
+============================================================
 
----
-
-### 6. Security Considerations
-
-**Content Security Policy:**
-
-```html
-<!-- In shell index.html -->
-<meta http-equiv="Content-Security-Policy" 
-      content="script-src 'self' http://localhost:3001 http://localhost:3002 http://localhost:3003">
-```
-
-**Authentication Token Sharing:**
-
-```javascript
-// Don't store sensitive tokens in sessionStorage
-// Use httpOnly cookies instead
-
-// authService.js
-async login(credentials) {
-  const response = await fetch('/api/login', {
-    credentials: 'include', // Include cookies
-  });
-  // Token stored in httpOnly cookie by backend
-}
-```
-
-**CORS Configuration:**
-
-```javascript
-// In production, be specific about origins
-headers: {
-  'Access-Control-Allow-Origin': 'https://app.microshop.com',
-  'Access-Control-Allow-Credentials': 'true'
-}
+💡 Some MFEs failed, but the app continues working!
+This demonstrates fault isolation in micro-frontend architecture.
 ```
 
 ---
 
-### 7. Monitoring & Observability
+## 📝 Scripts
 
-**Error Tracking:**
-
-```javascript
-// Integrate Sentry or similar
-import * as Sentry from "@sentry/react";
-
-Sentry.init({
-  dsn: "YOUR_DSN",
-  environment: process.env.NODE_ENV,
-});
-
-// In each MFE
-try {
-  await loadMFE();
-} catch (error) {
-  Sentry.captureException(error, {
-    tags: { mfe: 'products-mfe' }
-  });
-}
-```
-
-**Performance Monitoring:**
-
-```javascript
-// Measure MFE load times
-const start = performance.now();
-await import('productsMFE/ProductsApp');
-const loadTime = performance.now() - start;
-
-console.log(`Products MFE loaded in ${loadTime}ms`);
-```
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start development server (port 3000) |
+| `npm run start:sit` | Start with SIT configuration |
+| `npm run start:uat` | Start with UAT configuration |
+| `npm run build:dev` | Build for development |
+| `npm run build:sit` | Build for SIT environment |
+| `npm run build:uat` | Build for UAT environment |
+| `npm run build:prod` | Build for production |
 
 ---
 
-### 8. Documentation
+## 🔧 Tech Stack
 
-**Maintain these documents:**
+- **Build Tool**: Webpack 5
+- **Module Federation**: Webpack Module Federation Plugin
+- **Authentication**: Google Identity Services
+- **Language**: Vanilla JavaScript (ES6+)
+- **Styling**: Inline styles (no CSS framework)
+- **State Management**: Observer pattern (authService)
 
-1. **Architecture Decision Records (ADRs)**
-   ```
-   docs/adr/001-use-module-federation.md
-   docs/adr/002-event-based-communication.md
-   ```
+---
 
-2. **API/Event Contracts**
-   ```
-   docs/events.md        # All custom events
-   docs/shared-types.md  # TypeScript types
-   ```
+## 🎨 Key Features
 
-3. **Runbooks**
-   ```
-   docs/runbooks/deploy-new-mfe.md
-   docs/runbooks/rollback-procedure.md
-   ```
+### 1. Fault Isolation
 
-4. **Team Ownership**
-   ```
-   docs/CODEOWNERS
-   products-mfe-react/  @catalog-team
-   cart-mfe-vue/        @commerce-team
-   ```
+If an MFE fails to load, the shell:
+- ✅ Shows a friendly error message in that MFE's container
+- ✅ Continues loading other MFEs
+- ✅ Logs the error without crashing
+- ✅ Provides instructions to fix the issue
+
+### 2. Hot Module Replacement
+
+In development mode:
+- ✅ Changes reload automatically
+- ✅ Preserves authentication state
+- ✅ Fast refresh for quick development
+
+### 3. Professional Logging
+
+- ✅ Clear, formatted console output
+- ✅ Progress indicators (🔄 Loading...)
+- ✅ Success markers (✅)
+- ✅ Error markers (❌)
+- ✅ Summary statistics
+
+### 4. Environment Awareness
+
+- ✅ Visual indicator badge
+- ✅ Environment-specific configs
+- ✅ Different CSP policies per environment
+- ✅ Debug mode in non-production
+
+---
+
+## 🤝 Contributing
+
+### Code Standards
+
+- Use ESLint for linting
+- Follow the existing architecture patterns
+- Keep components focused and single-responsibility
+- Add JSDoc comments for public methods
+- Test in all environments before committing
+
+### Adding Features
+
+1. Create a feature branch
+2. Implement in the appropriate module
+3. Test locally with all MFEs
+4. Update documentation
+5. Submit pull request
+
+---
+
+## 📚 Related Documentation
+
+- [Main README](../README.md) - Complete project overview
+- [Products MFE](../products-mfe-react/README.md) - React micro-frontend
+- [Cart MFE](../cart-mfe-vue/README.md) - Vue micro-frontend
+- [User MFE](../user-mfe-angular/README.md) - Angular micro-frontend
 
 ---
 
 ## 🎓 Learning Resources
 
-### Micro-Frontend Patterns
-- [Micro Frontends](https://micro-frontends.org/) - martinfowler.com
-- [Module Federation Examples](https://github.com/module-federation/module-federation-examples)
-- [Single-SPA Documentation](https://single-spa.js.org/)
-
-### Webpack Module Federation
-- [Webpack 5 Module Federation](https://webpack.js.org/concepts/module-federation/)
-- [Practical Module Federation Book](https://module-federation.github.io/)
-
-### Framework-Specific
-- [React Documentation](https://react.dev/)
-- [Vue 3 Documentation](https://vuejs.org/)
-- [Angular Documentation](https://angular.io/)
+- [Webpack Module Federation](https://webpack.js.org/concepts/module-federation/)
+- [Micro-Frontends](https://micro-frontends.org/)
+- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 
 ---
 
-## 📞 Support & Contribution
+## 📞 Support
 
-### Getting Help
-
+For issues specific to the shell app:
 1. Check the [Troubleshooting](#troubleshooting) section
-2. Review browser console for error messages
-3. Test MFEs individually before integration
-4. Check network tab for failed requests
-
-### Contributing
-
-When adding features:
-1. Update this documentation
-2. Add tests for new functionality
-3. Ensure backward compatibility
-4. Update version numbers appropriately
-5. Document breaking changes
+2. Review browser console logs
+3. Verify all MFEs are running
+4. Check webpack configuration
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file for details
 
 ---
 
-## 🎉 Conclusion
+**Built with ❤️ by the Platform Team**
 
-You now have a fully functional micro-frontend architecture that demonstrates:
-
-✅ **Multiple frameworks** working together seamlessly  
-✅ **Independent development** and deployment  
-✅ **Fault isolation** - resilient to individual failures  
-✅ **Real-world patterns** - authentication, communication, state management  
-✅ **Scalable architecture** - easy to add new MFEs  
-
-**Next Steps:**
-1. Experiment with stopping/starting individual MFEs
-2. Add new features to existing MFEs
-3. Create a new MFE from scratch
-4. Deploy to production
-5. Add monitoring and analytics
-6. Implement more sophisticated state management
-
-**Happy coding!** 🚀
-
----
-
-*Last updated: November 2025*  
-*For questions or issues, refer to the troubleshooting section or consult the team documentation.*
+*Last Updated: November 2025*
