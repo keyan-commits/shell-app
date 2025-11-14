@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- CSP injected by webpack -->
+    <meta http-equiv="Content-Security-Policy" content="<%= CSP %>">
+    
+    <!-- Environment indicator (removed in production) -->
+    <% if (ENVIRONMENT !== 'production') { %>
+    <meta name="environment" content="<%= ENVIRONMENT %>">
+    <% } %>
+    
     <title>MicroShop - Micro-Frontend Architecture</title>
     <style>
         * {
@@ -18,6 +27,24 @@
         #root {
             min-height: 100vh;
         }
+        
+        /* Environment badge (only in non-prod) */
+        <% if (ENVIRONMENT !== 'production') { %>
+        body::before {
+            content: '<%= ENVIRONMENT.toUpperCase() %>';
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: <%= ENVIRONMENT === 'development' ? '#4CAF50' : ENVIRONMENT === 'sit' ? '#2196F3' : '#FF9800' %>;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        <% } %>
     </style>
 </head>
 <body>

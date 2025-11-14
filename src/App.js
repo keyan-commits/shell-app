@@ -1,6 +1,12 @@
 import authService from './auth/authService';
 import Login from './auth/Login';
 
+const MFE_URLS = {
+    products: process.env.MFE_PRODUCTS_URL || 'http://localhost:3001',
+    cart: process.env.MFE_CART_URL || 'http://localhost:3002',
+    user: process.env.MFE_USER_URL || 'http://localhost:3003',
+};
+
 export default class App {
     constructor() {
         this.isAuthenticated = false;
@@ -117,7 +123,7 @@ export default class App {
                 name: 'User Profile',
                 tech: 'Angular',
                 import: () => this.loadAngularMFE(),
-                mount: () => { }, // Already mounted by loadAngularMFE
+                mount: () => { },
                 containerId: 'user-mfe-container',
                 port: 3003
             },
@@ -138,7 +144,6 @@ export default class App {
                 port: 3002
             }
         ];
-
         let loadedCount = 0;
         let failedCount = 0;
 
@@ -167,62 +172,99 @@ export default class App {
         }
     }
 
-    // Add this new method
-    loadAngularMFE() {
-        return new Promise((resolve, reject) => {
-            // Check if already loaded
-            if (window.mountUserMFE) {
-                window.mountUserMFE();
-                resolve({});
+loadAngularMFE() {
+    return new Promise((resolve, reject) => {
+        // ✅ Define allowed origins based on environment
+        const baseUrl = process.env.MFE_USER_URL || 'http://localhost:3003';
+        const isDev = process.env.BUILD_ENV === 'dev';
+        
+        // ✅ Environment-aware allowed origins
+        const ALLOWED_ORIGINS = isDev 
+            ? ['http://localhost:3003'] // Development: only localhost
+            : [
+                'https://user-sit.microshop.com',
+                'https://user-uat.microshop.com',
+                'https://user.microshop.com'
+              ]; // Production environments
+        
+        // ✅ Validate origin
+        try {
+            const origin = new URL(baseUrl).origin;
+            
+            if (!ALLOWED_ORIGINS.includes(origin)) {
+                const error = `Security Error: Untrusted Angular MFE origin: ${origin}`;
+                console.error('🚨', error);
+                console.log('📋 Allowed origins:', ALLOWED_ORIGINS);
+                reject(new Error(error));
                 return;
             }
+            
+            console.log('✅ Security check passed for:', origin);
+        } catch (error) {
+            reject(new Error('Invalid Angular MFE URL format'));
+            return;
+        }
+        
+        // Check if already loaded
+        if (window.mountUserMFE) {
+            window.mountUserMFE();
+            resolve({});
+            return;
+        }
 
-            // Load runtime first
-            const runtime = document.createElement('script');
-            runtime.src = 'http://localhost:3003/runtime.js';
-            runtime.defer = true;
-
-            runtime.onload = () => {
-                // Then polyfills
-                const polyfills = document.createElement('script');
-                polyfills.src = 'http://localhost:3003/polyfills.js';
-                polyfills.defer = true;
-
-                polyfills.onload = () => {
-                    // Then vendor
-                    const vendor = document.createElement('script');
-                    vendor.src = 'http://localhost:3003/vendor.js';
-                    vendor.defer = true;
-
-                    vendor.onload = () => {
-                        // Finally main
-                        const main = document.createElement('script');
-                        main.src = 'http://localhost:3003/main.js';
-                        main.defer = true;
-
-                        main.onload = () => {
-                            setTimeout(() => {
-                                if (window.mountUserMFE) {
-                                    window.mountUserMFE('user-mfe'); // Pass the container ID
-                                    resolve({});
-                                } else {
-                                    reject(new Error('Angular mount function not available'));
-                                }
-                            }, 1500);
-                        };
-                        main.onerror = () => reject(new Error('Failed to load main.js'));
-                        document.body.appendChild(main);
-                    };
-                    vendor.onerror = () => reject(new Error('Failed to load vendor.js'));
-                    document.body.appendChild(vendor);
-                };
-                polyfills.onerror = () => reject(new Error('Failed to load polyfills.js'));
-                document.body.appendChild(polyfills);
+        // ✅ Helper function to create secure script
+        const createSecureScript = (filename) => {
+            const script = document.createElement('script');
+            script.src = `${baseUrl}/${filename}`;
+            script.defer = true;
+            script.crossOrigin = 'anonymous'; // Security: Enable CORS
+            
+            // Add error handling
+            script.onerror = () => {
+                console.error(`❌ Failed to load Angular script: ${filename}`);
             };
-            runtime.onerror = () => reject(new Error('Failed to load runtime.js'));
-            document.body.appendChild(runtime);
-        });
-    }
+            
+            return script;
+        };
+
+        // Load runtime first
+        const runtime = createSecureScript('runtime.js');
+        
+        runtime.onload = () => {
+            // Then polyfills
+            const polyfills = createSecureScript('polyfills.js');
+            
+            polyfills.onload = () => {
+                // Then vendor
+                const vendor = createSecureScript('vendor.js');
+                
+                vendor.onload = () => {
+                    // Finally main
+                    const main = createSecureScript('main.js');
+                    
+                    main.onload = () => {
+                        setTimeout(() => {
+                            if (window.mountUserMFE) {
+                                window.mountUserMFE('user-mfe');
+                                resolve({});
+                            } else {
+                                reject(new Error('Angular mount function not available'));
+                            }
+                        }, 1500);
+                    };
+                    main.onerror = () => reject(new Error('Failed to load main.js'));
+                    document.body.appendChild(main);
+                };
+                vendor.onerror = () => reject(new Error('Failed to load vendor.js'));
+                document.body.appendChild(vendor);
+            };
+            polyfills.onerror = () => reject(new Error('Failed to load polyfills.js'));
+            document.body.appendChild(polyfills);
+        };
+        runtime.onerror = () => reject(new Error('Failed to load runtime.js'));
+        document.body.appendChild(runtime);
+    });
+}
 
     showMFEStatus(containerId, status, name, tech, port) {
         const container = document.getElementById(containerId);

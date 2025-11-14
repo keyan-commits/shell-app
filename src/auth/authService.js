@@ -1,4 +1,6 @@
 // OAuth Authentication Service
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
 class AuthService {
     constructor() {
         this.user = null;
@@ -8,7 +10,6 @@ class AuthService {
     }
 
     loadGoogleSDK() {
-        // Load Google Identity Services
         const script = document.createElement('script');
         script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
@@ -18,10 +19,6 @@ class AuthService {
     }
 
     initializeGoogle() {
-        // Replace with your Google Client ID from:
-        // https://console.cloud.google.com/apis/credentials
-        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-        
         if (typeof google !== 'undefined') {
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
@@ -34,8 +31,8 @@ class AuthService {
         if (typeof google !== 'undefined') {
             google.accounts.id.renderButton(
                 document.getElementById(elementId),
-                { 
-                    theme: 'filled_blue', 
+                {
+                    theme: 'filled_blue',
                     size: 'large',
                     text: 'signin_with',
                     width: 280
@@ -47,7 +44,7 @@ class AuthService {
     handleGoogleResponse(response) {
         // Decode JWT token
         const payload = this.parseJwt(response.credential);
-        
+
         this.user = {
             id: payload.sub,
             name: payload.name,
@@ -55,7 +52,7 @@ class AuthService {
             picture: payload.picture,
             provider: 'google'
         };
-        
+
         this.isAuthenticated = true;
         this.notifyListeners();
         this.storeSession();
@@ -89,7 +86,7 @@ class AuthService {
         this.isAuthenticated = false;
         sessionStorage.removeItem('mfe_user');
         this.notifyListeners();
-        
+
         if (typeof google !== 'undefined') {
             google.accounts.id.disableAutoSelect();
         }

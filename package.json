@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "description": "Shell application with authentication for micro-frontends",
   "scripts": {
-    "start": "npx webpack serve --open",
-    "build": "npx webpack --mode production"
+    "start": "BUILD_ENV=dev npx webpack serve --open",
+    "start:sit": "BUILD_ENV=sit npx webpack serve --open",
+    "start:uat": "BUILD_ENV=uat npx webpack serve --open",
+    "build:dev": "BUILD_ENV=dev npx webpack --mode development",
+    "build:sit": "BUILD_ENV=sit npx webpack --mode production",
+    "build:uat": "BUILD_ENV=uat npx webpack --mode production",
+    "build:prod": "BUILD_ENV=prod npx webpack --mode production"
   },
-  "keywords": [
-    "micro-frontend",
-    "shell",
-    "oauth"
-  ],
+  "keywords": ["micro-frontend", "shell", "oauth"],
   "author": "Platform Team",
   "license": "MIT",
   "dependencies": {
@@ -24,6 +25,6 @@
     "html-webpack-plugin": "^5.5.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.2"
+    "webpack-dev-server": "^4.15.1"
   }
 }
