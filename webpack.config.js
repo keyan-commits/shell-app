@@ -54,9 +54,8 @@ module.exports = {
         new ModuleFederationPlugin({
             name: 'shell',
             remotes: {
-                productsMFE: `productsMFE@${config.mfeUrls.products}/remoteEntry.js`,
-                cartMFE: `cartMFE@${config.mfeUrls.cart}/remoteEntry.js`,
-                userMFE: `userMFE@${config.mfeUrls.user}/remoteEntry.js`,
+                productsMFE: 'productsMFE@http://localhost:3001/remoteEntry.js',
+                cartMFE: 'cartMFE@http://localhost:3002/remoteEntry.js',
             },
             shared: {
                 react: { singleton: true, eager: true },
