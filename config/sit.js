@@ -1,10 +1,10 @@
 module.exports = {
-  environment: 'uat',
-  shellUrl: 'https://uat.microshop.com',
+  environment: 'sit',
+  shellUrl: 'https://sit.microshop.com',
   mfeUrls: {
-    products: 'https://products-uat.microshop.com',
+    products: 'https://products-sit.microshop.com',
     cart: 'https://cart-sit.microshop.com',
-    user: 'https://user-uat.microshop.com',
+    user: 'https://user-sit.microshop.com',
   },
 
   security: {
@@ -12,9 +12,9 @@ module.exports = {
       'default-src': ["'self'"],
       'script-src': [
         "'self'", 
-        "https://products-uat.microshop.com", 
-        "https://cart-uat.microshop.com", 
-        "https://user-uat.microshop.com", 
+        "https://products-sit.microshop.com", 
+        "https://cart-sit.microshop.com", 
+        "https://user-sit.microshop.com", 
         "https://accounts.google.com",
         "'unsafe-inline'",
         "https://connect.facebook.net"
@@ -32,13 +32,18 @@ module.exports = {
       ],
       'connect-src': [
         "'self'", 
-        "https://uat.microshop.com", 
+        "https://sit.microshop.com", 
         "https://accounts.google.com",
         "https://www.facebook.com",
         "https://graph.facebook.com"
       ],
+      'frame-src': [
+        "'self'",
+        "https://www.facebook.com",
+        "https://staticxx.facebook.com"
+      ],
     },
-    corsOrigins: ['https://uat.microshop.com'],
+    corsOrigins: ['https://sit.microshop.com'],
   },
 
   features: {

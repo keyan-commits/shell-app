@@ -38,7 +38,14 @@ module.exports = {
         "https://accounts.google.com", 
         "https://apis.google.com",
         "https://www.facebook.com",
-        "https://graph.facebook.com"
+        "https://graph.facebook.com",
+        "https://*.facebook.com",
+        "https://*.fbsbx.com"
+      ],
+      'frame-src': [
+        "'self'",
+        "https://www.facebook.com",
+        "https://staticxx.facebook.com"
       ],
     },
     corsOrigins: ['*'],

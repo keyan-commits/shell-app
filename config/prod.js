@@ -36,6 +36,11 @@ module.exports = {
         "https://www.facebook.com",     // ✨ Add this
         "https://graph.facebook.com"    // ✨ Add this
       ],
+      'frame-src': [
+        "'self'",
+        "https://www.facebook.com",
+        "https://staticxx.facebook.com"
+      ],
     },
     corsOrigins: ['https://your-production-domain.com'],
   },

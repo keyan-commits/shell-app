@@ -1,353 +1,22 @@
-// ============================================================================
-// AUTH CONFIGURATION
-// ============================================================================
 /**
- * Central configuration for all authentication providers.
- * Add new providers here to enable them.
+ * ============================================================================
+ * AUTHENTICATION SERVICE (Main Controller)
+ * ============================================================================
+ * Manages all authentication providers and handles user sessions.
+ * 
+ * This service is much cleaner now - all provider logic is in separate files!
  */
-const AUTH_CONFIG = {
-    google: {
-        enabled: true, // Change to false to disable
-        clientId: process.env.GOOGLE_CLIENT_ID || '',
-        sdkUrl: 'https://accounts.google.com/gsi/client',
-        name: 'Google',
-        scopes: ['profile', 'email']
-    },
-    facebook: {
-        enabled: true,
-        appId: process.env.FACEBOOK_APP_ID || '',
-        sdkUrl: 'https://connect.facebook.net/en_US/sdk.js',
-        name: 'Facebook',
-        version: 'v18.0',
-        scopes: ['public_profile']
-    },
-    demo: {
-        enabled: true,
-        name: 'Demo'
-    }
-    // Add more providers here following the same pattern:
-    // github: {
-    //     enabled: false,
-    //     clientId: process.env.GITHUB_CLIENT_ID || '',
-    //     sdkUrl: 'https://github.com/login/oauth/authorize',
-    //     name: 'GitHub',
-    //     scopes: ['user:email']
-    // }
-};
 
-// ============================================================================
-// BASE AUTH PROVIDER (Abstract Class Pattern)
-// ============================================================================
+import AUTH_CONFIG from './config/authConfig';
+import GoogleAuthProvider from './providers/GoogleAuthProvider';
+import FacebookAuthProvider from './providers/FacebookAuthProvider';
+import DemoAuthProvider from './providers/DemoAuthProvider';
+// Import new providers here:
+// import KeycloakAuthProvider from './providers/KeycloakAuthProvider';
+// import OktaAuthProvider from './providers/OktaAuthProvider';
+
 /**
- * Base class for all authentication providers.
- * Follows Open/Closed Principle - open for extension, closed for modification.
- */
-class AuthProvider {
-    constructor(config) {
-        if (this.constructor === AuthProvider) {
-            throw new Error('AuthProvider is abstract and cannot be instantiated directly');
-        }
-        this.config = config;
-        this.name = config.name;
-    }
-
-    /**
-     * Initialize the provider (load SDK, setup, etc.)
-     * Must be implemented by subclasses
-     */
-    async initialize() {
-        throw new Error('initialize() must be implemented by subclass');
-    }
-
-    /**
-     * Perform login flow
-     * Must be implemented by subclasses
-     * @returns {Promise<Object>} User object with standardized format
-     */
-    async login() {
-        throw new Error('login() must be implemented by subclass');
-    }
-
-    /**
-     * Perform logout flow
-     * Must be implemented by subclasses
-     */
-    async logout() {
-        throw new Error('logout() must be implemented by subclass');
-    }
-
-    /**
-     * Check if provider is properly configured
-     * @returns {boolean}
-     */
-    isConfigured() {
-        throw new Error('isConfigured() must be implemented by subclass');
-    }
-
-    /**
-     * Standardize user data format across all providers
-     * @param {Object} rawUserData - Provider-specific user data
-     * @returns {Object} Standardized user object
-     */
-    normalizeUserData(rawUserData) {
-        return {
-            id: rawUserData.id,
-            name: rawUserData.name,
-            email: rawUserData.email,
-            picture: rawUserData.picture,
-            provider: this.name.toLowerCase()
-        };
-    }
-}
-
-// ============================================================================
-// GOOGLE AUTH PROVIDER
-// ============================================================================
-/**
- * Google OAuth implementation
- */
-class GoogleAuthProvider extends AuthProvider {
-    constructor(config) {
-        super(config);
-        this.isInitialized = false;
-    }
-
-    async initialize() {
-        if (this.isInitialized) return;
-        if (!this.isConfigured()) {
-            console.warn(`⚠️  ${this.name} OAuth not configured`);
-            return;
-        }
-
-        return new Promise((resolve) => {
-            const script = document.createElement('script');
-            script.src = this.config.sdkUrl;
-            script.async = true;
-            script.defer = true;
-            script.onload = () => {
-                this._initializeGoogleAuth();
-                this.isInitialized = true;
-                resolve();
-            };
-            document.head.appendChild(script);
-        });
-    }
-
-    _initializeGoogleAuth() {
-        if (typeof google === 'undefined') {
-            console.error(`❌ ${this.name} SDK not loaded`);
-            return;
-        }
-
-        try {
-            google.accounts.id.initialize({
-                client_id: this.config.clientId,
-                callback: (response) => this._handleGoogleResponse(response)
-            });
-            console.log(`✅ ${this.name} Auth initialized`);
-        } catch (error) {
-            console.error(`❌ Error initializing ${this.name} Auth:`, error);
-        }
-    }
-
-    _handleGoogleResponse(response) {
-        const payload = this._parseJwt(response.credential);
-        const userData = {
-            id: payload.sub,
-            name: payload.name,
-            email: payload.email,
-            picture: payload.picture
-        };
-        
-        // Trigger callback if set
-        if (this.onLoginSuccess) {
-            this.onLoginSuccess(this.normalizeUserData(userData));
-        }
-    }
-
-    _parseJwt(token) {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    }
-
-    async login() {
-        // Google uses button-based login, handled by renderButton
-        throw new Error('Google login is handled via renderButton()');
-    }
-
-    renderButton(elementId) {
-        if (!this.isInitialized || typeof google === 'undefined') {
-            console.error(`❌ ${this.name} not initialized`);
-            return;
-        }
-
-        const element = document.getElementById(elementId);
-        if (!element) {
-            console.error(`❌ Element #${elementId} not found`);
-            return;
-        }
-
-        try {
-            google.accounts.id.renderButton(element, {
-                theme: 'filled_blue',
-                size: 'large',
-                text: 'signin_with',
-                width: 280
-            });
-            console.log(`✅ ${this.name} button rendered`);
-        } catch (error) {
-            console.error(`❌ Error rendering ${this.name} button:`, error);
-        }
-    }
-
-    async logout() {
-        if (typeof google !== 'undefined') {
-            google.accounts.id.disableAutoSelect();
-        }
-    }
-
-    isConfigured() {
-        const isValid = this.config.clientId && 
-                       !this.config.clientId.includes('123456789') &&
-                       this.config.clientId.includes('.apps.googleusercontent.com');
-        
-        if (!isValid) {
-            console.warn(`⚠️  ${this.name} Client ID is invalid or missing`);
-        }
-        
-        return isValid;
-    }
-}
-
-// ============================================================================
-// FACEBOOK AUTH PROVIDER
-// ============================================================================
-/**
- * Facebook OAuth implementation
- */
-class FacebookAuthProvider extends AuthProvider {
-    constructor(config) {
-        super(config);
-        this.isInitialized = false;
-    }
-
-    async initialize() {
-        if (this.isInitialized) return;
-        if (!this.isConfigured()) {
-            console.warn(`⚠️  ${this.name} OAuth not configured`);
-            return;
-        }
-
-        return new Promise((resolve) => {
-            window.fbAsyncInit = () => {
-                FB.init({
-                    appId: this.config.appId,
-                    cookie: true,
-                    xfbml: true,
-                    version: this.config.version
-                });
-                this.isInitialized = true;
-                console.log(`✅ ${this.name} SDK initialized`);
-                resolve();
-            };
-
-            const script = document.createElement('script');
-            script.src = this.config.sdkUrl;
-            script.async = true;
-            script.defer = true;
-            document.head.appendChild(script);
-        });
-    }
-
-    async login() {
-        if (!this.isInitialized || typeof FB === 'undefined') {
-            throw new Error(`${this.name} SDK not loaded`);
-        }
-
-        return new Promise((resolve, reject) => {
-            FB.login((response) => {
-                if (response.authResponse) {
-                    // Get user info
-                    FB.api('/me', { fields: 'id,name,email,picture.width(200).height(200)' }, (userInfo) => {
-                        const userData = {
-                            id: userInfo.id,
-                            name: userInfo.name,
-                            email: userInfo.email || `${userInfo.id}@facebook.com`,
-                            picture: userInfo.picture?.data?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.name)}`
-                        };
-                        resolve(this.normalizeUserData(userData));
-                    });
-                } else {
-                    reject(`${this.name} login cancelled`);
-                }
-            }, { scope: this.config.scopes.join(',') });
-        });
-    }
-
-    async logout() {
-        if (this.isInitialized && typeof FB !== 'undefined') {
-            return new Promise((resolve) => {
-                FB.logout(() => {
-                    console.log(`✅ Logged out from ${this.name}`);
-                    resolve();
-                });
-            });
-        }
-    }
-
-    isConfigured() {
-        const isValid = this.config.appId && this.config.appId !== '';
-        
-        if (!isValid) {
-            console.warn(`⚠️  ${this.name} App ID is missing`);
-        }
-        
-        return isValid;
-    }
-}
-
-// ============================================================================
-// DEMO AUTH PROVIDER
-// ============================================================================
-/**
- * Demo authentication provider (no external service)
- */
-class DemoAuthProvider extends AuthProvider {
-    async initialize() {
-        // No initialization needed for demo
-        console.log(`✅ ${this.name} provider ready`);
-    }
-
-    async login() {
-        const userData = {
-            id: 'demo-user-123',
-            name: 'Sarah Chen',
-            email: 'sarah.chen@example.com',
-            picture: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=667eea&color=fff&size=200'
-        };
-        return this.normalizeUserData(userData);
-    }
-
-    async logout() {
-        // No logout needed for demo
-        console.log(`✅ Logged out from ${this.name}`);
-    }
-
-    isConfigured() {
-        return true; // Demo is always available
-    }
-}
-
-// ============================================================================
-// AUTH SERVICE (Main Controller)
-// ============================================================================
-/**
- * Main authentication service that manages all providers.
- * Follows Single Responsibility Principle and Dependency Inversion.
+ * Main Authentication Service
  */
 class AuthService {
     constructor(config) {
@@ -370,7 +39,9 @@ class AuthService {
             google: GoogleAuthProvider,
             facebook: FacebookAuthProvider,
             demo: DemoAuthProvider
-            // Add new provider classes here
+            // Add new providers here:
+            // keycloak: KeycloakAuthProvider,
+            // okta: OktaAuthProvider
         };
 
         // Instantiate enabled providers
@@ -445,6 +116,7 @@ class AuthService {
 
     /**
      * Logout current user
+     * @returns {Promise<void>}
      */
     async logout() {
         if (this.user && this.user.provider) {
@@ -463,7 +135,7 @@ class AuthService {
     }
 
     /**
-     * Store user session
+     * Store user session in sessionStorage
      * @private
      */
     _storeSession() {
@@ -471,7 +143,7 @@ class AuthService {
     }
 
     /**
-     * Load existing session
+     * Load existing session from sessionStorage
      */
     loadSession() {
         const stored = sessionStorage.getItem('mfe_user');

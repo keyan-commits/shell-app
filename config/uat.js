@@ -37,6 +37,11 @@ module.exports = {
         "https://www.facebook.com",
         "https://graph.facebook.com"
       ],
+      'frame-src': [
+        "'self'",
+        "https://www.facebook.com",
+        "https://staticxx.facebook.com"
+      ],
     },
     corsOrigins: ['https://uat.microshop.com'],
   },
