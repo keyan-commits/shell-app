@@ -14,9 +14,14 @@ const envConfig = dotenv.config({ path: envFile }).parsed || {};
 // 🐛 DEBUG: Log what's loaded
 console.log('📄 Using environment file:', envFile);
 console.log('🔑 Google Client ID loaded:', envConfig.GOOGLE_CLIENT_ID ? '✅ Yes' : '❌ No');
+console.log('🔑 Facebook App ID loaded:', envConfig.FACEBOOK_APP_ID ? '✅ Yes' : '❌ No');
 
 if (!envConfig.GOOGLE_CLIENT_ID) {
     console.warn('⚠️  WARNING: GOOGLE_CLIENT_ID not found in', envFile);
+}
+
+if (!envConfig.FACEBOOK_APP_ID) {
+    console.warn('⚠️  WARNING: FACEBOOK_APP_ID not found in', envFile);
 }
 
 // Determine environment
@@ -92,6 +97,7 @@ module.exports = {
             'process.env.MFE_CART_URL': JSON.stringify(envConfig.CART_MFE_URL || config.mfeUrls.cart),
             'process.env.MFE_USER_URL': JSON.stringify(envConfig.USER_MFE_URL || config.mfeUrls.user),
             'process.env.GOOGLE_CLIENT_ID': JSON.stringify(envConfig.GOOGLE_CLIENT_ID || ''),
+            'process.env.FACEBOOK_APP_ID': JSON.stringify(envConfig.FACEBOOK_APP_ID || ''),
             'process.env.DEBUG_MODE': JSON.stringify(config.features.debugMode),
         }),
     ],

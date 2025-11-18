@@ -1,4 +1,3 @@
-
 class AuthService {
     constructor() {
         this.user = null;
@@ -7,8 +6,10 @@ class AuthService {
 
         // 🐛 DEBUG: Check what Client ID is being used
         console.log('🔑 Auth Service - Google Client ID from env:', process.env.GOOGLE_CLIENT_ID);
+        console.log('🔑 Auth Service - Facebook App ID from env:', process.env.FACEBOOK_APP_ID);
 
         this.loadGoogleSDK();
+        this.loadFacebookSDK();
     }
 
     loadGoogleSDK() {
@@ -17,6 +18,25 @@ class AuthService {
         script.async = true;
         script.defer = true;
         script.onload = () => this.initializeGoogle();
+        document.head.appendChild(script);
+    }
+
+    loadFacebookSDK() {
+        window.fbAsyncInit = () => {
+            FB.init({
+                appId: process.env.FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID_HERE',
+                cookie: true,
+                xfbml: true,
+                version: 'v18.0'
+            });
+            console.log('✅ Facebook SDK initialized');
+        };
+
+        const script = document.createElement('script');
+        script.src = 'https://connect.facebook.net/en_US/sdk.js';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => console.log('✅ Facebook SDK loaded');
         document.head.appendChild(script);
     }
 
@@ -101,6 +121,40 @@ class AuthService {
         this.storeSession();
     }
 
+    loginWithFacebook() {
+        return new Promise((resolve, reject) => {
+            if (typeof FB === 'undefined') {
+                console.error('❌ Facebook SDK not loaded');
+                reject('Facebook SDK not loaded');
+                return;
+            }
+
+            FB.login((response) => {
+                if (response.authResponse) {
+                    console.log('✅ Facebook login successful');
+                    
+                    // Get user info
+                    FB.api('/me', { fields: 'id,name,email,picture.width(200).height(200)' }, (userInfo) => {
+                        this.user = {
+                            id: userInfo.id,
+                            name: userInfo.name,
+                            email: userInfo.email || `${userInfo.id}@facebook.com`,
+                            picture: userInfo.picture?.data?.url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userInfo.name),
+                            provider: 'facebook'
+                        };
+                        this.isAuthenticated = true;
+                        this.notifyListeners();
+                        this.storeSession();
+                        resolve(this.user);
+                    });
+                } else {
+                    console.log('❌ Facebook login cancelled or failed');
+                    reject('Facebook login cancelled');
+                }
+            }, { scope: 'public_profile,email' });
+        });
+    }
+
     parseJwt(token) {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -126,6 +180,13 @@ class AuthService {
     }
 
     logout() {
+        // Handle Facebook logout
+        if (this.user?.provider === 'facebook' && typeof FB !== 'undefined') {
+            FB.logout(() => {
+                console.log('✅ Logged out from Facebook');
+            });
+        }
+
         this.user = null;
         this.isAuthenticated = false;
         sessionStorage.removeItem('mfe_user');

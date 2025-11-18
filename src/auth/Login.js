@@ -22,10 +22,39 @@ export default class Login {
                         <span style="font-size: 13px; color: #999;">React • Vue • Angular • Module Federation</span>
                     </p>
                     
+                    <!-- Social Login Section -->
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <!-- Google Sign-In -->
                         <div id="google-signin-button" style="display: flex; justify-content: center; margin-bottom: 15px;"></div>
+                        
+                        <!-- Facebook Sign-In Button -->
+                        <button id="facebook-login-btn" style="
+                            width: 100%;
+                            padding: 12px;
+                            background: #1877f2;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 15px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 10px;
+                            transition: all 0.3s;
+                            margin-bottom: 15px;
+                        "
+                        onmouseover="this.style.background='#166fe5'; this.style.transform='translateY(-1px)';"
+                        onmouseout="this.style.background='#1877f2'; this.style.transform='translateY(0)';">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                            Continue with Facebook
+                        </button>
+                        
                         <p style="font-size: 11px; color: #999; margin: 0;">
-                            Sign in with your Google account
+                            Sign in with your preferred account
                         </p>
                     </div>
                     
@@ -68,6 +97,27 @@ export default class Login {
         setTimeout(() => {
             authService.renderGoogleButton('google-signin-button');
         }, 100);
+
+        // Facebook login button handler
+        const fbBtn = document.getElementById('facebook-login-btn');
+        if (fbBtn) {
+            fbBtn.addEventListener('click', async () => {
+                fbBtn.disabled = true;
+                const originalHTML = fbBtn.innerHTML;
+                fbBtn.innerHTML = '⏳ Signing in...';
+                
+                try {
+                    await authService.loginWithFacebook();
+                } catch (error) {
+                    console.error('Facebook login error:', error);
+                    fbBtn.disabled = false;
+                    fbBtn.innerHTML = originalHTML;
+                    
+                    // Optional: Show error message
+                    alert('Facebook login failed. Please try again.');
+                }
+            });
+        }
 
         // Demo login button
         document.getElementById('demo-login-btn').addEventListener('click', () => {
