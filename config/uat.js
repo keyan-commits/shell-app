@@ -10,15 +10,39 @@ module.exports = {
   security: {
     csp: {
       'default-src': ["'self'"],
-      'script-src': ["'self'", "https://products-uat.microshop.com", "https://cart-uat.microshop.com", "https://user-uat.microshop.com", "https://accounts.google.com"],
-      'style-src': ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
-      'img-src': ["'self'", "data:", "https:"],
-      'connect-src': ["'self'", "https://*.microshop.com", "https://accounts.google.com"],
+      'script-src': [
+        "'self'", 
+        "https://products-uat.microshop.com", 
+        "https://cart-uat.microshop.com", 
+        "https://user-uat.microshop.com", 
+        "https://accounts.google.com",
+        "'unsafe-inline'",
+        "https://connect.facebook.net"
+      ],
+      'style-src': [
+        "'self'", 
+        "'unsafe-inline'", 
+        "https://accounts.google.com"
+      ],
+      'img-src': [
+        "'self'", 
+        "data:", 
+        "https:",
+        "https://platform-lookaside.fbsbx.com"
+      ],
+      'connect-src': [
+        "'self'", 
+        "https://uat.microshop.com", 
+        "https://accounts.google.com",
+        "https://www.facebook.com",
+        "https://graph.facebook.com"
+      ],
     },
     corsOrigins: ['https://uat.microshop.com'],
   },
+
   features: {
     debugMode: false,
     hotReload: false,
-  }
+  },
 };
