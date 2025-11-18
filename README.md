@@ -1,3 +1,32 @@
+## 🚀 Setup Instructions
+
+### Quick Start (using defaults)
+```bash
+npm install
+npm start  # Uses .env.dev with demo credentials
+```
+
+### Custom Setup (with your own Google OAuth)
+```bash
+npm install
+cp .env.dev .env
+# Edit .env with your actual Google Client ID
+npm start  # Uses your .env file
+```
+
+### Getting Google OAuth Client ID
+1. Go to https://console.cloud.google.com/
+2. Create OAuth 2.0 Client ID
+3. Add `http://localhost:3000` to authorized origins
+4. Copy Client ID to `.env` file
+
+### Environment Files
+- `.env.dev` - Default development config (committed)
+- `.env.sit` - SIT environment config (committed)
+- `.env.uat` - UAT environment config (committed)
+- `.env.prod` - Production config (committed)
+- `.env` - Your local override (gitignored, create from .env.dev)
+
 # Shell App - Micro-Frontend Container
 
 The orchestrator application that loads and coordinates all micro-frontends (MFEs) in the MicroShop application.

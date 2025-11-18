@@ -6,7 +6,7 @@ module.exports = {
     cart: 'http://localhost:3002',
     user: 'http://localhost:3003',
   },
-  googleClientId: 'YOUR_DEV_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+  
   security: {
     csp: {
       'default-src': ["'self'", "http://localhost:*", "ws://localhost:*"],

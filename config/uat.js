@@ -6,7 +6,7 @@ module.exports = {
     cart: 'https://cart-uat.microshop.com',
     user: 'https://user-uat.microshop.com',
   },
-  googleClientId: 'YOUR_UAT_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+
   security: {
     csp: {
       'default-src': ["'self'"],

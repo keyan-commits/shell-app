@@ -5,9 +5,3 @@ dist/
 .env
 .env.local
 .env.*.local
-
-# Keep environment templates
-!.env.dev
-!.env.sit
-!.env.uat
-!.env.prod

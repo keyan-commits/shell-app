@@ -1,11 +1,13 @@
-// OAuth Authentication Service
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
 class AuthService {
     constructor() {
         this.user = null;
         this.isAuthenticated = false;
         this.listeners = [];
+
+        // 🐛 DEBUG: Check what Client ID is being used
+        console.log('🔑 Auth Service - Google Client ID from env:', process.env.GOOGLE_CLIENT_ID);
+
         this.loadGoogleSDK();
     }
 
@@ -19,29 +21,70 @@ class AuthService {
     }
 
     initializeGoogle() {
-        if (typeof google !== 'undefined') {
+        if (typeof google === 'undefined') {
+            console.error('❌ Google SDK not loaded');
+            return;
+        }
+
+        // Use process.env directly
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        
+        // 🐛 DEBUG: Check what we're using
+        console.log('🔐 Initializing Google Auth with Client ID:', clientId);
+        console.log('🔐 Client ID length:', clientId ? clientId.length : 0);
+        console.log('🔐 Is placeholder?', clientId && clientId.includes('123456789'));
+
+        // Validate Client ID
+        if (!clientId || clientId === '' || clientId.includes('123456789')) {
+            console.error('❌ Invalid or placeholder Google Client ID!');
+            console.error('❌ Google OAuth will not work. Using Demo login only.');
+            return;
+        }
+
+        // Check if it looks like a valid Google Client ID
+        if (!clientId.includes('.apps.googleusercontent.com')) {
+            console.error('❌ Client ID format invalid! Should end with .apps.googleusercontent.com');
+            return;
+        }
+
+        try {
             google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
+                client_id: clientId,
                 callback: (response) => this.handleGoogleResponse(response)
             });
+            console.log('✅ Google Auth initialized successfully');
+        } catch (error) {
+            console.error('❌ Error initializing Google Auth:', error);
         }
     }
 
     renderGoogleButton(elementId) {
         if (typeof google !== 'undefined') {
-            google.accounts.id.renderButton(
-                document.getElementById(elementId),
-                {
+            const element = document.getElementById(elementId);
+            if (!element) {
+                console.error('❌ Google button element not found:', elementId);
+                return;
+            }
+
+            try {
+                google.accounts.id.renderButton(element, {
                     theme: 'filled_blue',
                     size: 'large',
                     text: 'signin_with',
                     width: 280
-                }
-            );
+                });
+                console.log('✅ Google button rendered');
+            } catch (error) {
+                console.error('❌ Error rendering Google button:', error);
+            }
+        } else {
+            console.error('❌ Google SDK not available for button render');
         }
     }
 
     handleGoogleResponse(response) {
+        console.log('✅ Google login successful');
+        
         // Decode JWT token
         const payload = this.parseJwt(response.credential);
 
@@ -69,6 +112,7 @@ class AuthService {
 
     // Demo login (works without OAuth setup)
     loginDemo() {
+        console.log('🎭 Demo login used');
         this.user = {
             id: 'demo-user-123',
             name: 'Sarah Chen',
