@@ -7,7 +7,7 @@
  */
 const AUTH_CONFIG = {
     google: {
-        enabled: true, // Change to false to disable
+        enabled: true,
         clientId: process.env.GOOGLE_CLIENT_ID || '',
         sdkUrl: 'https://accounts.google.com/gsi/client',
         name: 'Google',
